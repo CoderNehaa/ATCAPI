@@ -1,0 +1,878 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Articles API",
+    "description": "This API is developed to create articles based web application",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3200",
+      "description": "local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "JWT": {
+        "in": "header",
+        "name": "Authorization",
+        "type": "apiKey"
+      }
+    }
+  },
+  
+  "paths": {
+    "/articles/all": {
+      "get": {
+        "tags": ["Articles"],
+        "description": "This API returns array of all articles",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/articles/{articleId}": {
+      "get": {
+        "tags": ["Articles"],
+        "description": "This API returns an article based on the provided article id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "articleId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/articles/author/{userId}": {
+      "get": {
+        "tags": ["Articles"],
+        "description": "This API returns an array of articles based on the provided author id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/articles/trending":{
+      "get":{
+        "tags":["Articles"],
+        "description":"Get trending articles based on number of likes",
+        "responses":{
+          "200":{
+            "description":"ok"
+          },
+          "500":{
+            "description":"Internal Server Error"
+          }
+        }
+      }
+    },
+    "/articles/keyword/{keywordId}":{
+      "get":{
+        "tags":["Articles"],
+        "description":"Get Articles based on keyword",
+        "parameters":[
+          {
+            "in":"path",
+            "name":"keyword",
+            "type":"number",
+            "required":true
+          }
+        ],
+        "responses":{
+          "200":{
+            "description":"OK"
+          },
+          "400":{
+            "description":"Bad Request"
+          },
+          "404":{
+            "description":"Not Found"
+          },
+          "500":{
+            "description":"Internal Server Error"
+          }
+        }
+      }
+    },
+    "/articles/add": {
+      "post": {
+        "tags": ["Articles"],
+        "description": "Add new article",
+        "security":[
+          {
+            "JWT":{}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "userId": {
+                    "type": "number"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "keywords": {
+                    "type": "array",
+                    "items":{
+                      "type":"number"
+                    }
+                  },
+                  "articleImage": {
+                    "type": "string"
+                  },
+                  "privacy": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "language": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "authorId",
+                "title",
+                "body",
+                "keywords",
+                "image",
+                "privacy",
+                "description",
+                "language"
+              ]
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Article Added Successfully"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/articles/update/{articleId}": {
+      "put": {
+        "tags": ["Articles"],
+        "description": "Update article",
+        "security": [
+          {
+            "JWT": {}
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "type": "string",
+            "required": true,
+            "name": "articleId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "keywords": {
+                    "type": "string"
+                  },
+                  "image": {
+                    "type": "string"
+                  },
+                  "privacy": {
+                    "type": "string"
+                  },
+                  "language": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/articles/remove/{articleId}": {
+      "delete": {
+        "tags": ["Articles"],
+        "description": "Delete articles by article id",
+        "security": [
+          {
+            "JWT": {}
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "articleId",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/articles/language/{language}": {
+      "get": {
+        "tags": ["Articles"],
+        "description": "Get Articles based on language",
+        "parameters": [
+          {
+            "name": "language",
+            "in": "path",
+            "required": true,
+            "description": "Select language (hindi or english)",
+            "schema": {
+              "type": "string",
+              "enum": ["hindi", "english"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/articles/likes/{articleId}/{userId}":{
+      "post":{
+        "tags":["Articles"],
+        "description":"Add or remove like on article by user",
+        "security":[
+          {
+            "JWT":{}
+          }
+        ],
+        "parameters":[
+          {
+            "in":"path",
+            "name":"articleId",
+            "type":"number",
+            "required":true
+          },
+          {
+            "in":"path",
+            "name":"userId",
+            "type":"number",
+            "required":true
+          }
+        ],
+        "responses":{
+          "200":{
+            "description":"ok"
+          },
+          "404":{
+            "description":"NOt Found"
+          },
+          "500":{
+            "description":"Internal Server Error"
+          }
+        }
+      }
+    },
+    "/comments/{articleId}": {
+      "get": {
+        "tags": ["Comments"],
+        "description": "Get all comments of one article using article id",
+        "security":[
+          {
+            "JWT":{}
+          }
+        ],
+        "parameters": [
+          {
+            "in":"path",
+            "type": "number",
+            "name": "articleId",
+            "required": true
+          }
+        ],
+        "responses": [
+          {
+            "200": {
+              "description": "OK"
+            },
+            "400": {
+              "description": "Bad Request"
+            },
+            "500": {
+              "description": "Internal Server Error"
+            }
+          }
+        ]
+      }
+    },
+    "/comments/add": {
+      "post": {
+        "tags": ["Comments"],
+        "description": "Add new comment to article",
+        "security": [{ "JWT": {} }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "required": true,
+              "schema": {
+                "properties": {
+                  "userId":{
+                    "type":"number"
+                  },
+                  "articleId":{
+                    "type":"number"
+                  },
+                  "text":{
+                    "type":"string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses":{
+          "201":{
+            "description":"OK"
+          },
+          "400":{
+            "description":"Bad Request"
+          },
+          "500":{
+            "description":"Internal Server Error"
+          }
+        }
+      }
+    },
+    "/comments/edit/{commentId}":{
+      "put":{
+        "tags":["Comments"],
+        "description":"Edit comment",
+        "security":[
+          {
+            "JWT":{}
+          }
+        ],
+        "parameters":[
+          {
+            "in":"path",
+            "type":"number",
+            "name":"commentId",
+            "required":true
+          }
+        ],
+        "requestBody":{
+          "required":true,
+          "content":{
+            "application/json":{
+              "schema":{
+                "properties":{
+                  "text":{
+                    "type":"string",
+                    "required":true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses":{
+          "200":{
+            "description":"OK"
+          },
+          "400":{
+            "description":"Bad Request"
+          },
+          "500":{
+            "description":"Internal Server Error"
+          }
+        }
+      }
+    },
+    "/comments/delete/{commentId}":{
+      "delete":{
+        "tags":["Comments"],
+        "description":"Remove comment by comment Id",
+        "security":[
+          {
+            "JWT":{}
+          }
+        ],
+        "parameters":[
+          {
+            "in":"path",
+            "type":"number",
+            "name":"commentId",
+            "required":true
+          }
+        ]
+      }
+    },
+    "/keywords/add":{
+      "post":{
+        "tags":["Keywords"],
+        "description":"Add new keyword",
+        "security":[
+          {
+            "JWT":{}
+          }
+        ],
+        "requestBody":{
+          "content":{
+            "application/json":{
+              "required":true,
+              "schema":{
+                "properties":{
+                  "keywordName":{
+                    "type":"string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses":{
+          "200":{
+            "description":"OK"
+          },
+          "500":{
+            "description":"Internal Server Error"
+          }
+        }
+      }
+    },
+    "/keywords/all":{
+      "get":{
+        "tags":["Keywords"],
+        "description":"Get all keywords",
+        "responses":{
+          "200":{
+            "description":"OK"
+          },
+          "500":{
+            "description":"Internal Server Error"
+          }
+        }
+      }
+    },
+    "/keywords/remove/{keywordId}":{
+      "delete":{
+        "tags":["Keywords"],
+        "description":"Delete keyword by keyword id",
+        "security":[
+          {
+            "JWT":{}
+          }
+        ],
+        "parameters":[
+          {
+            "in":"path",
+            "type":"number",
+            "name":"keywordId",
+            "required":true
+          }
+        ],
+        "responses":{
+          "200":{
+            "description":"OK"
+          },
+          "404":{
+            "description":"Keyword not found"
+          },
+          "500":{
+            "description":"Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/all": {
+      "get": {
+        "tags": ["Users"],
+        "description": "Returns a list of users",
+        "security": [
+          {
+            "JWT": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/add": {
+      "post": {
+        "tags": ["Users"],
+        "description": "Add New User",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["userName", "email", "password"]
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "409": {
+            "description": "Conflict - User with same email or username already exists"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/update/{userId}": {
+      "put": {
+        "tags": ["Users"],
+        "description": "Update user",
+        "security": [
+          {
+            "JWT": {}
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "type": "string",
+            "name": "userId",
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userName": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "profilePicture": {
+                    "type": "string"
+                  },
+                  "bio": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "userName",
+                "firstName",
+                "lastName",
+                "profilePicture",
+                "bio"
+              ]
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/{userId}": {
+      "get": {
+        "tags": ["Users"],
+        "description": "Returns user by user id",
+        "security": [
+          {
+            "JWT": {}
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/remove/{userId}": {
+      "delete": {
+        "tags": ["Users"],
+        "description": "Delete user by user Id",
+        "security": [
+          {
+            "JWT": {}
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/resetPassword": {
+      "patch": {
+        "tags": ["Users"],
+        "description": "Reset user password",
+        "security": [
+          {
+            "JWT": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["email", "password"]
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/login": {
+      "post": {
+        "tags": ["Users"],
+        "description": "using email and password, this api returns user information",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Incorrect credentials"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/mailRandomPassword/{email}": {
+      "post": {
+        "tags": ["Users"],
+        "description": "If user forget password, this API sends random password to given email address",
+        "security": [
+          {
+            "JWT": {}
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "email",
+            "type": "string",
+            "format": "email",
+            "required": true
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User Not Found"
+          },
+          "200": {
+            "description": "Ok"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    }
+  }
+}
+

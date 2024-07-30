@@ -1,0 +1,154 @@
+I am developing REST API for my new website which is based on articles where user can read, and publish articles, like and comment on articles. 
+I am using node, express, passport, mysql workbench and typescript to develop API. 
+
+This is folder structure of my API - 
+ myexpressapi-
+├── src/
+│   ├── config/                  
+│   │   ├── db.connect.ts                # Database connection setup
+│   │
+│   ├── controllers/             # Controllers to handle requests
+│   │   └── article.controller.ts  # article-related logic
+│   │   └── category.controller.ts  # category-related logic
+│   │   └── comment.controller.ts  # comment-related logic
+│   │   ├── user.controller.ts     # User-related logic
+│   │
+│   ├── interfaces             
+│   │   └── response.interface.ts
+│   │
+│   ├── middleware/              # Custom middleware functions
+│   │   ├── email.middleware.ts     # Nodemailer mail sending middleware
+│   │   ├── errorHandler.middleware.ts     # error handling middleware
+│   │   ├── jwtAuth.middleware.ts     # Authentication middleware with jet
+│   │   ├── formValidation.middleware.ts     # email and password validation
+│   │
+│   ├── models/                  # Database models (if using ORM)
+│   │   ├── article.model.ts          # article model definition
+│   │   ├── category.model.ts          # category model definition
+│   │   ├── comment.model.ts          # comment model definition
+│   │   ├── user.model.ts          # User model definition
+│   │
+│   ├── routes/                  # Route definitions
+│   │   ├── article.routes.ts         # articles routes
+│   │   ├── comment.routes.ts         # comment routes
+│   │   ├── category.routes.ts         # category routes
+│   │   ├── index.ts         # main router given to main application file (index.ts)
+│   │   ├── userRoutes.ts         # User routes
+│   │
+│   ├── utils/                   # Utility functions
+│   │   ├── logger.ts             # Logging utility
+│   │
+│   ├── index.ts                   # Main application file
+│   └── passport.ts                # google and Facebook auth
+│
+├── .env                # Environment variables
+├── .eslintignore               
+├── .eslintrc.json
+├── .gitignore                ├── package.json                  # Project metadata and dependencies
+├── package-lock.json                  
+├── README.md                
+├── swagger.json                 
+└── tsconfig.json                         # TypeScript configuration
+
+
+Below are sql tables - 
+1. users
+CREATE TABLE `users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `email` varchar(100) NOT NULL,
+  `bio` varchar(255) DEFAULT NULL,
+  `subscriptionType` enum('free','paid') DEFAULT 'free',
+  `totalArticles` int DEFAULT '0',
+  `accountDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `profilePicture` varchar(255) DEFAULT NULL,
+  `socialId` varchar(255) DEFAULT NULL,
+  `provider` enum('password','google','facebook') DEFAULT NULL,
+  `isVerified` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) 
+
+2. articles
+CREATE TABLE articles(
+	id INT AUTO_INCREMENT PRIMARY KEY,
+    authorId INT NOT NULL,
+    title VARCHAR(255) NOT NULL UNIQUE, -- maximum 30 words
+    description VARCHAR(255), -- maximum 150 words
+    articleBody TEXT, -- maximum 1000 words
+    articleImg VARCHAR(255),
+    likes INT DEFAULT 0, 
+    articleDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    privacy ENUM ('private', 'public') NOT NULL,
+    language ENUM ('English','Hindi') NOT NULL,
+    FOREIGN KEY(authorId) REFERENCES users(id)
+)
+
+3. keywords
+CREATE TABLE `keywords` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `keywordName` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`keywordName`)
+)
+
+4. comments
+CREATE TABLE `comments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `userId` int NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `profilePicture` varchar(255) DEFAULT NULL,
+  `comment` text NOT NULL,
+  `commentDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `userId` (`userId`),
+  CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`id`)
+) 
+
+5. article_keywords
+CREATE TABLE `article_keywords` (
+  `articleId` int NOT NULL,
+  `keywordId` int NOT NULL,
+  PRIMARY KEY (`articleId`,`keywordId`),
+  KEY `keywordId` (`keywordId`),
+  CONSTRAINT `article_keywords_ibfk_1` FOREIGN KEY (`articleId`) REFERENCES `articles` (`id`),
+  CONSTRAINT `article_keywords_ibfk_2` FOREIGN KEY (`keywordId`) REFERENCES `keywords` (`id`)
+) 
+
+
+6. article_comments
+CREATE TABLE `article_comments` (
+  `articleId` int NOT NULL,
+  `commentId` int NOT NULL,
+  PRIMARY KEY (`articleId`,`commentId`),
+  KEY `commentId` (`commentId`),
+  CONSTRAINT `article_comments_ibfk_1` FOREIGN KEY (`articleId`) REFERENCES `articles` (`id`),
+  CONSTRAINT `article_comments_ibfk_2` FOREIGN KEY (`commentId`) REFERENCES `comments` (`id`)
+) 
+
+7. article_likes
+CREATE TABLE `article_likes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `articleId` int NOT NULL,
+  `userId` int NOT NULL,
+  `likedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniqueLike` (`articleId`,`userId`),
+  KEY `userId` (`userId`),
+  CONSTRAINT `article_likes_ibfk_1` FOREIGN KEY (`articleId`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `article_likes_ibfk_2` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) 
+
+
+If one article is deleted, I wanted to delete its entry from articles table, and its related comments, from comments and
+article_comments table, its related likes from article_likes, its related keywords from article_keywords table. In the same way, 
+if user entry is deleted from users table, then its related comments should be deleted from comments table and article_comments,
+its related likes should also be deleted from article_likes table and all the articles which userId is same as id of user who is 
+deleting account, those articles should also be deleted. If any keyword is deleted from keywords table, I want to delete that
+keyword from article_keyword also
+
+
+
+
+
