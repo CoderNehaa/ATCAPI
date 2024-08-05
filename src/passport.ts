@@ -2,11 +2,9 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook";
-import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import { Provider, UserInterface, UserModel } from "./models/user.model";
-
-dotenv.config();
+import { config } from "./config/config";
 
 const comparePassword = (password: string, hash: string): Promise<boolean> => {
   return bcrypt.compare(password, hash);
@@ -26,7 +24,7 @@ passport.use(
         }
       } catch (e) {
         console.error(e);
-        return done(e, false);
+        return done(e, false, {message:"Failed to login! Please try again"});
       }
     }
   )
@@ -36,11 +34,11 @@ passport.use(
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENTID || "your-google-client-id",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "your-google-client-secret",
-      callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:3200/users/auth/google/callback",
+      clientID: config.GOOGLE_CLIENTID,
+      clientSecret: config.GOOGLE_CLIENT_SECRET,
+      callbackURL: config.GOOGLE_CALLBACK_URL,
     },
-    async function (accessToken, refreshtoken, profile, done) {
+    async function (accessToken:any, refreshtoken:any, profile:any, done:any) {
       try {
         const email = profile.emails ? profile.emails[0].value : "";
         if (!email) {
@@ -75,9 +73,9 @@ passport.use(
 passport.use(
   new FacebookStrategy(
     {
-      clientID: process.env.FACEBOOK_APPID || "your-facebook-app-id",
-      clientSecret: process.env.FACEBOOK_SECRET || "your-facebook-app-secret",
-      callbackURL: process.env.FACEBOOK_REDIRECT || "/users/auth/facebook/callback",
+      clientID: config.FACEBOOK_APPID,
+      clientSecret: config.FACEBOOK_SECRET,
+      callbackURL: config.FACEBOOK_CALLBACK_URL,
       profileFields: ["id", "displayName", "emails", "profileUrl"],
     },
     async function (accessToken, refreshtoken, profile, done) {

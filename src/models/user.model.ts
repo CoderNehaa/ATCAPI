@@ -27,6 +27,11 @@ export interface UserInterface {
 }
 
 export class UserModel {
+  static async getAll():Promise<any>{
+    const [users] = await pool.query(`SELECT * FROM users`);
+    return users;
+  }
+
   static async getByEmail(email: string): Promise<any> {
     const [data]: Array<any> = await pool.query(
       "SELECT * FROM users where email = ?",
@@ -46,10 +51,14 @@ export class UserModel {
   }
 
   static async getbyId(id: number): Promise<any> {
+    if(!id){
+      return;
+    }
     const [data]: Array<any> = await pool.query(
       "SELECT * FROM users where id = ?",
       [id]
     );
+    
     if (data.length > 0) {
       return {
         result: true,
@@ -58,7 +67,7 @@ export class UserModel {
     } else {
       return {
         result: false,
-        message: "No account found with this user id",
+        message: "No account found with this credentials",
       };
     }
   }

@@ -26,7 +26,7 @@ export interface ArticleInterface {
 
 export class ArticleModel {
   static async create(article: ArticleInterface): Promise<void> {
-    const result:any = await pool.query(
+    const result: any = await pool.query(
       `INSERT INTO 
       articles(userId, title, description, content, articleImage, privacy, language)
       VALUE(?, ?, ?, ?, ?, ?, ?)
@@ -42,8 +42,8 @@ export class ArticleModel {
       ]
     );
     const newArticleId = result[0].insertId;
-    
-    if(article.keywords && article.keywords.length){
+
+    if (article.keywords && article.keywords.length) {
       await this.addKeywords(newArticleId, article.keywords);
     }
   }
@@ -91,6 +91,50 @@ export class ArticleModel {
     ]);
   }
 
+  static async getAll() {
+    try {
+      const [rows] = await pool.query("SELECT * FROM articles"); // Execute the query
+      return rows; // Return the fetched articles
+    } catch (error) {
+      console.error("Error fetching articles by keyword:", error);
+      throw error; // Rethrow the error for handling in the controller
+    }
+  }
+
+  static async getTrending() {
+    const sql = `
+      SELECT 
+        a.id, 
+        a.title, 
+        a.description, 
+        a.articleImage, 
+        a.likes, 
+        a.articleDate, 
+        u.id AS userId, 
+        u.username, 
+        u.profilePicture, 
+        COUNT(ac.commentId) AS comments 
+      FROM 
+        articles a
+      JOIN 
+        users u ON a.userId = u.id 
+      LEFT JOIN 
+        article_comments ac ON a.id = ac.articleId  -- Use LEFT JOIN to include articles with no comments
+      GROUP BY 
+        a.id, u.id
+      ORDER BY 
+        a.likes DESC  -- Order by likes in descending order
+    `;
+
+    try {
+      const [rows] = await pool.query(sql); // Execute the query
+      return rows; // Return the fetched articles
+    } catch (error) {
+      console.error("Error fetching trending articles:", error);
+      throw error; // Rethrow the error for handling in the controller
+    }
+  }
+
   static async getByKeyword(keywordId: number): Promise<any> {
     const sql = `
       SELECT a.id, a.title, a.description, a.articleImage, a.likes, a.articleDate, 
@@ -109,16 +153,62 @@ export class ArticleModel {
     }
   }
 
-  static async addKeywords(articleId:number, keywordIds:number[]):Promise<void>{
-      const insertQueries = keywordIds
-        .map((keywordId) => `(${articleId}, ${keywordId})`)
-        .join(", ");
-      
-      // SQL query to insert keywords into article_keywords table
-      const sql = `INSERT INTO article_keywords (articleId, keywordId) 
+  static async getById(articleId: number): Promise<any> {
+    const articlesQuery = `
+    SELECT a.id,
+      a.title,
+      a.description,
+      a.content,
+      a.likes,
+      a.articleDate,
+      a.articleImage,
+      u.username,
+      u.profilePicture,
+      u.id as userId
+      FROM articles a 
+      JOIN users u ON a.userId = u.id
+      WHERE a.privacy="public" AND 
+      a.id = 1
+    `;
+    const [articles]: any = await pool.query(articlesQuery, [articleId]);
+
+    if (articles.length === 0) {
+      return null;
+    }
+    const article = articles[0];
+    const keywordsQuery = `
+    SELECT 
+      k.id,
+      k.keywordName
+    FROM article_keywords ak
+    JOIN keywords k ON ak.keywordId = k.id
+    WHERE ak.articleId = ?
+  `;
+
+    const [keywords]: any = await pool.query(keywordsQuery, [article.id]);
+    const [comments] = await pool.query(
+      `SELECT * FROM comments WHERE articleId = ?`,
+      [article.id]
+    );
+    article.comments = comments;
+    article.keywords = keywords
+
+    return article;
+  }
+
+  static async addKeywords(
+    articleId: number,
+    keywordIds: number[]
+  ): Promise<void> {
+    const insertQueries = keywordIds
+      .map((keywordId) => `(${articleId}, ${keywordId})`)
+      .join(", ");
+
+    // SQL query to insert keywords into article_keywords table
+    const sql = `INSERT INTO article_keywords (articleId, keywordId) 
                  VALUES ${insertQueries} 
                  ON DUPLICATE KEY UPDATE keywordId = keywordId`;
 
-      await pool.query(sql);
+    await pool.query(sql);
   }
 }

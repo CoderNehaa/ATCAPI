@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import generator from "generate-password";
 import mailSender from "../middlewares/email.middleware";
 import { ResponseInterface } from "../interfaces/response.interface";
@@ -9,7 +8,7 @@ import { Provider, UserInterface, UserModel } from "../models/user.model";
 class UserController {
   async getAllUsers(req: Request, res: Response) {
     try {
-      const users = ["pending"];
+      const users = await UserModel.getAll();
       const succResponse: ResponseInterface<typeof users> = {
         result: true,
         message: "Data fetched successfully",
@@ -26,39 +25,43 @@ class UserController {
     }
   }
 
-  async addNewUser(req: Request, res: Response) {
+  async signup(req: Request, res: Response) {
+    const errResponse: ResponseInterface<Error> = {
+      result: false,
+      message: "",
+    };
     try {
-      const {email, password, username} = req.body;
-      if(!email || !password || !username){
-        const errResponse:ResponseInterface<Error> = {
-          result:false,
-          message:"Username, email and password fields are mandatory"
-        }
+      const { email, password, username } = req.body;
+      if (!email || !password || !username) {
+        errResponse.message =
+          "Username, email and password fields are mandatory";
         return res.status(400).send(errResponse);
       }
 
       let emailExist = await UserModel.getByEmail(email);
       if (emailExist.result) {
-        const errResponse: ResponseInterface<Error> = {
-          result: false,
-          message: "Account with this email already exists",
-        };
-        return res.status(409).send(errResponse);
+        errResponse.message = "Account with this email already exists";
+        return res.status(200).send(errResponse);
       }
 
       // hash password here
-      const hashedPassword:string = await bcrypt.hash(password, 10);
-      const user:UserInterface = {
-        email, password:hashedPassword, username, provider:Provider.password, isVerified:false, socialId:"", profilePicture:""
-      }
-      const newUser:any = await UserModel.create(user);
-      const succResponse: ResponseInterface<void> = {
-        result: true,
-        message: "User created successfully",
-        data:newUser
+      const hashedPassword: string = await bcrypt.hash(password, 10);
+      const user: UserInterface = {
+        email,
+        password: hashedPassword,
+        username,
+        provider: Provider.password,
+        isVerified: false,
+        socialId: "",
+        profilePicture: "",
       };
-      
-      return res.status(201).send(succResponse);
+
+      const newUser: any = await UserModel.create(user);
+      return res.status(200).send({
+        result: true,
+        message: "Account created successfully",
+        data: user,
+      });
     } catch (e) {
       console.log(e);
       const errResponse: ResponseInterface<Error> = {
@@ -99,69 +102,31 @@ class UserController {
     }
   }
 
-  async signin(req: Request, res: Response) {
-    try {
-      const { email, password } = req.body;
-      const user = { userId: "pending", email: "pending", password: "pending" };
-      if (user) {
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (passwordMatch) {
-          const token = jwt.sign(
-            { userId: user.userId, email: user.email },
-            "WG6oqviIhVwcCJKY1ZI5G0NKnaTB5uYb",
-            { expiresIn: "1h" }
-          );
-          const succResponse: ResponseInterface<any> = {
-            result: true,
-            message: "Signed in successfully",
-            data: {
-              user,
-              token,
-            },
-          };
-          return res.status(200).send(succResponse);
-        }
-        const errResponse: ResponseInterface<Error> = {
-          result: false,
-          message: "Incorrect password",
-        };
-        return res.status(401).send(errResponse);
-      }
-      const errResponse: ResponseInterface<Error> = {
-        result: false,
-        message: "User not found",
-      };
-      return res.status(404).send(errResponse);
-    } catch (e) {
-      console.log(e);
-      const errResponse: ResponseInterface<Error> = {
-        result: false,
-        message: "Error occurred while validating user",
-      };
-      return res.status(500).send(errResponse);
-    }
-  }
-
   async getUserByUserId(req: Request, res: Response) {
+    const errResponse: ResponseInterface<Error> = {
+      result: false,
+      message: "",
+    };
     try {
       const userId = parseInt(req.params.userId);
-      const userFound = await UserModel.getbyId(userId);
-      if (userFound.result) {
-        const succResponse: ResponseInterface<typeof userFound.user> = {
+      if (!userId) {
+        errResponse.message = "Invalid user id";
+        return errResponse;
+      }
+      const userRes = await UserModel.getbyId(userId);
+      if (userRes.result) {
+        const succResponse: ResponseInterface<UserInterface> = {
           result: true,
-          data: userFound.user,
+          data: userRes.user,
         };
         return res.status(200).send(succResponse);
       } else {
-        return res.status(404).send(userFound);
+        return res.status(404).send(userRes);
       }
     } catch (e) {
       console.log(e);
-      const errResponse: ResponseInterface<Error> = {
-        result: false,
-        message: "Error occurred while getting user",
-      };
-      return res.status(500).send(errResponse);
+      errResponse.message = "Error occurred while getting user";
+      return res.status(200).send(errResponse);
     }
   }
 
@@ -249,6 +214,10 @@ class UserController {
       };
       return res.status(500).send(errResponse);
     }
+  }
+
+  async sendValidUser(req: Request, res: Response) {
+    res.status(200).send({ result: true, user: req.user });
   }
 }
 

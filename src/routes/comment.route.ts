@@ -1,5 +1,5 @@
 import express from 'express';
-import { authMiddleware } from '../middlewares/jwtAuth.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware';
 import CommentController from '../controllers/comment.controller';
 
 const articleRouter = express();

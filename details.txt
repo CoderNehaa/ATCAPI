@@ -140,15 +140,58 @@ CREATE TABLE `article_likes` (
   CONSTRAINT `article_likes_ibfk_2` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) 
 
+  async verifyRefreshToken(req: Request, res: Response) {
+    const errResponse: ResponseInterface<Error> = {
+      result: false,
+      message: "",
+    };
 
-If one article is deleted, I wanted to delete its entry from articles table, and its related comments, from comments and
-article_comments table, its related likes from article_likes, its related keywords from article_keywords table. In the same way, 
-if user entry is deleted from users table, then its related comments should be deleted from comments table and article_comments,
-its related likes should also be deleted from article_likes table and all the articles which userId is same as id of user who is 
-deleting account, those articles should also be deleted. If any keyword is deleted from keywords table, I want to delete that
-keyword from article_keyword also
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+      errResponse.message = "Refersh Token not provided";
+      return res.status(400).send(errResponse);
+    }
 
+    try {
+      const jwtSecret = config.JWT_SECRET;
+      if (!jwtSecret) {
+        throw new Error(
+          "JWT_SECRET is not defined in the environment variables."
+        );
+      }
 
+      const decoded = jwt.verify(refreshToken, jwtSecret) as {
+        userId: number;
+        email: string;
+      };
+      const userId = decoded.userId;
+      const email = decoded.email;
+
+      // Generate new tokens
+      const newAccessToken = generateToken(userId, email, "1h");
+      const newRefreshToken = generateToken(userId, email, "7d");
+
+      res.cookie("refreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: config.NODE_ENV === "production",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+    } catch (e) {
+      console.log(e);
+
+      if (e instanceof jwt.JsonWebTokenError) {
+        errResponse.message = "Invalid refersh token";
+        return res.status(403).send(errResponse);
+      } else if (e instanceof jwt.TokenExpiredError) {
+        errResponse.message = "Refresh token has expired";
+        return res.status(403).send(errResponse);
+      }
+
+      errResponse.message = "Internal server error";
+      return res.status(500).send(errResponse);
+    }
+  }
 
 
 

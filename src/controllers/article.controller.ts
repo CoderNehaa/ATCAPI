@@ -15,7 +15,7 @@ interface Article {
 class ArticleController {
   async getAllArticles(req: Request, res: Response): Promise<Response> {
     try {
-      const [articles] = await pool.query("SELECT * FROM articles");
+      const articles = await ArticleModel.getAll();
       const responseObj: ResponseInterface<typeof articles> = {
         result: true,
         message: "All articles fetched successfully",
@@ -33,15 +33,16 @@ class ArticleController {
   }
 
   async getTrendingArticles(req: Request, res: Response): Promise<Response> {
-    try {
-      // get articles based on number of likes
-      const responseObj: ResponseInterface<void> = {
+    try {      
+      const articles = await ArticleModel.getTrending();
+      const responseObj: ResponseInterface<typeof articles> = {
         result: true,
-        message: "API pending",
+        message: "Trending articles fetched successfully",
+        data: articles,
       };
       return res.status(200).send(responseObj);
     } catch (e) {
-      console.log("Error while getting trending articles : ", e);
+      console.log("Error occurred while getting trending articles : ", e);
       const responseObj: ResponseInterface<Error> = {
         result: false,
         message: "Error occurred while getting trending articles",
@@ -128,14 +129,18 @@ class ArticleController {
 
   async getArticleByArticleId(req: Request, res: Response): Promise<Response> {
     try {
-      const { articleId } = req.params;
-      const [article] = await pool.query(
-        `SELECT * FROM articles WHERE id=${articleId}`
-      );
+      const articleId = parseInt(req.params.articleId);
+      if(isNaN(articleId)){
+        return res.status(400).send({
+          result:false,
+          message:"Invalid Article ID"
+        })
+      }
+      const article = await ArticleModel.getById(articleId);
       if (article) {
         const responseObj: ResponseInterface<typeof article> = {
           result: true,
-          message: "Data fetched successfully",
+          message: "Article fetched successfully",
           data: article,
         };
         return res.status(200).send(responseObj);

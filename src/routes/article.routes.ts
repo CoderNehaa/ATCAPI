@@ -1,14 +1,16 @@
 import express from 'express';
 import ArticleController from '../controllers/article.controller';
-import { authMiddleware } from '../middlewares/jwtAuth.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware';
 
 const articleRouter = express();
 const articleController = new ArticleController();
 
 articleRouter.get('/all', articleController.getAllArticles);
+articleRouter.get('/trending', articleController.getTrendingArticles);
+
 articleRouter.get('/:articleId', articleController.getArticleByArticleId);
 articleRouter.get('/author/:userId', articleController.getArticlesByUserId);
-articleRouter.get('/trending', articleController.getTrendingArticles);
+
 articleRouter.get('/language/:language', articleController.getArticleByLanguage);
 
 articleRouter.post('/add', authMiddleware, articleController.addNewArticle);
@@ -21,5 +23,6 @@ articleRouter.post('/likes/:articleId/:userId', authMiddleware, articleControlle
 //keywords
 articleRouter.post('/add-keywords', authMiddleware, articleController.addKeywordsToArticle);
 articleRouter.get('/keyword/:keywordId', articleController.getArticlesByKeywords);
+
 
 export default articleRouter;
