@@ -1,12 +1,12 @@
-import "./passport";
+import "./src/passport";
 import cors from "cors";
 import express from 'express';
 import passport from 'passport';
 import swaggerUi from 'swagger-ui-express';
 import session from 'express-session';
-import router from './routes/index';
-import swaggerDoc from '../swagger.json';
-import { config } from './config/config';
+import router from './src/routes/index';
+import swaggerDoc from './swagger.json';
+import { config } from './src/config/config';
 import cookieParser from "cookie-parser";
 import {Server} from "socket.io";
 import http from "http"
