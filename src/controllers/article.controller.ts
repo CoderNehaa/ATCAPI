@@ -3,7 +3,6 @@ import { ArticleInterface, ArticleModel } from "../models/article.model";
 import { ResponseInterface } from "../interfaces/response.interface";
 import pool from "../config/db.connect";
 import { UserModel } from "../models/user.model";
-import { KeywordModel } from "../models/keyword.model";
 
 interface Article {
   id: number;
@@ -34,7 +33,8 @@ class ArticleController {
 
   async getTrendingArticles(req: Request, res: Response): Promise<Response> {
     try {      
-      const articles = await ArticleModel.getTrending();
+      const userId = parseInt(req.params.userId); 
+      const articles = await ArticleModel.getTrending(userId?userId:0);
       const responseObj: ResponseInterface<typeof articles> = {
         result: true,
         message: "Trending articles fetched successfully",
@@ -51,66 +51,13 @@ class ArticleController {
     }
   }
 
-  async getArticleByLanguage(req: Request, res: Response): Promise<Response> {
-    try {
-      const { language } = req.params;
-      const [articles] = await pool.query(
-        `SELECT * FROM articles where language = '${language}'`
-      );
-      const responseObj: ResponseInterface<typeof articles> = {
-        result: true,
-        message: "Data fetched successfully",
-        data: articles,
-      };
-      return res.status(200).send(responseObj);
-    } catch (e) {
-      console.log(e);
-      const responseObj: ResponseInterface<Error> = {
-        result: false,
-        message: "Internal server error",
-      };
-      return res.status(500).send(responseObj);
-    }
-  }
-
-  async addKeywordsToArticle(req: Request, res: Response): Promise<Response> {
-    try {
-      const {
-        articleId,
-        keywordIds,
-      }: { articleId: number; keywordIds: number[] } = req.body;
-      if (!articleId || !Array.isArray(keywordIds) || keywordIds.length === 0) {
-        const errResponse: ResponseInterface<Error> = {
-          result: false,
-          message:
-            "Invalid input. Please provide a valid article ID and an array of keyword IDs.",
-        };
-        return res.status(400).send(errResponse);
-      }
-
-      await ArticleModel.addKeywords(articleId, keywordIds);
-
-      const succResponse: ResponseInterface<void> = {
-        result: true,
-        message: "Keywords added to article successfully",
-      };
-      return res.status(500).send("done");
-    } catch (e) {
-      console.log(e);
-      const errResponse: ResponseInterface<Error> = {
-        result: false,
-        message: "Internal server error",
-      };
-      return res.status(500).send(errResponse);
-    }
-  }
-
   async getArticlesByKeywords(req: Request, res: Response): Promise<Response> {
     try {
+      const user:any = req.user;
       const keywordId = parseInt(req.params.keywordId);
-      const articles = await ArticleModel.getByKeyword(keywordId);
+      const articles = await ArticleModel.getByKeyword(keywordId, user?user.id:0);
       const responseObj: ResponseInterface<typeof articles> = {
-        result: false,
+        result: true,
         data: articles
       };
       return res.status(200).send(responseObj);
@@ -123,7 +70,28 @@ class ArticleController {
         result: false,
         message: "Error occurred while getting articles filtered by category",
       };
-      return res.status(500).send(responseObj);
+      return res.status(200).send(responseObj);
+    }
+  }
+
+  async getUserFavoriteArticles(req:Request, res:Response){
+    try{
+      const user:any = req.user;
+      if(!user){
+        return;
+      }
+      const articles = await ArticleModel.getFavorites(user.id);
+      const successRes :ResponseInterface<typeof articles> = {
+        result:true,
+        data:articles
+      }
+      return res.status(200).send(successRes);
+    } catch (e){
+      console.log(e);
+      return res.status(200).send({
+        result:false,
+        message:"Could not fetch favorite articles! Try later"
+      })
     }
   }
 
@@ -164,7 +132,7 @@ class ArticleController {
     try {
       const { userId } = req.params;
       const [authorArticles] = await pool.query(
-        `SELECT * FROM articles where userId = '${userId}'`
+        `SELECT * FROM articles where userId = ${userId}`
       );
       if (authorArticles) {
         const responseObj: ResponseInterface<typeof authorArticles> = {
@@ -279,6 +247,74 @@ class ArticleController {
     }
   }
 
+  async addKeywordsToArticle(req: Request, res: Response): Promise<Response> {
+    try {
+      const {
+        articleId,
+        keywordIds,
+      }: { articleId: number; keywordIds: number[] } = req.body;
+      if (!articleId || !Array.isArray(keywordIds) || keywordIds.length === 0) {
+        const errResponse: ResponseInterface<Error> = {
+          result: false,
+          message:
+            "Invalid input. Please provide a valid article ID and an array of keyword IDs.",
+        };
+        return res.status(400).send(errResponse);
+      }
+
+      await ArticleModel.addKeywords(articleId, keywordIds);
+
+      const succResponse: ResponseInterface<void> = {
+        result: true,
+        message: "Keywords added to article successfully",
+      };
+      return res.status(500).send("done");
+    } catch (e) {
+      console.log(e);
+      const errResponse: ResponseInterface<Error> = {
+        result: false,
+        message: "Internal server error",
+      };
+      return res.status(500).send(errResponse);
+    }
+  }
+
+  async addToFavorites(req:Request, res:Response){
+    try{
+      const user:any = req.user;
+      const articleId = parseInt(req.params.articleId);
+      await ArticleModel.addFavorite(user.id, articleId);
+      return res.status(200).send({
+        result:true,
+        message:"Article added to Bookmarks."
+      })
+    } catch (e){
+      console.log(e);
+      return res.status(200).send({
+        result:false,
+        message:"Failed to add article to Bookmarks! Try later."
+      })
+    }
+  }
+
+  async removeFromFavorites(req:Request, res:Response){
+    try{
+      const user:any = req.user;
+      const articleId = parseInt(req.params.articleId);
+      await ArticleModel.removeFavorite(user.id, articleId);
+      return res.status(200).send({
+        result:true,
+        message:"Article removed from Bookmarks."
+      })
+    } catch (e){
+      console.log(e);
+      return res.status(200).send({
+        result:false,
+        message:"Failed to remove articles from Bookmarks! Try later."
+      })
+    }
+  }
+  
   async toggleLikes(req: Request, res: Response): Promise<Response> {
     try {
       const articleId = parseInt(req.params.articleId);
@@ -326,6 +362,7 @@ class ArticleController {
       return res.status(500).send(errResponse);
     }
   }
+
 }
 
 export default ArticleController;

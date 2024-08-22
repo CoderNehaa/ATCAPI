@@ -8,8 +8,21 @@ import router from './routes/index';
 import swaggerDoc from '../swagger.json';
 import { config } from './config/config';
 import cookieParser from "cookie-parser";
-const server = express();
+import {Server} from "socket.io";
+import http from "http"
 const PORT = 3200;
+
+const server = express();
+
+const httpServer = http.createServer(server);
+//socket.io Server requires httpServer
+const io = new Server(httpServer, {
+  cors:{
+    origin:"http://localhost:3000",
+    methods:['GET', 'POST'],
+    credentials:true
+  }
+});
 
 server.use(session({
   secret: config.SESSION_SECRET,
@@ -25,21 +38,40 @@ server.use(cors({
   allowedHeaders:['Content-Type', 'Authorization']
 }));
 
+
+//socket events
+io.on('connection', (socket) => {
+  console.log('New client connected');
+
+  socket.on('sendMessage', (data) => {
+    socket.to(data.chatId).emit('receiveMessage', data);
+  })  
+
+  socket.on('joinChat', (chatId) => {
+    socket.join(chatId);
+  })
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  })
+})
+
+server.use(express.json());
+server.use(cookieParser())
+
+
 //Intializes Passport for incoming requests, allowing authentication strategies to be applied.
 server.use(passport.initialize());
 
 //Middleware that will restore login state from a session.
 server.use(passport.session());
-server.use(cookieParser())
-server.use(express.json());
 
 server.use('/', router);
 server.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
 
-// express handler middleware here
-
-server.listen(PORT, () => {
+// error handler middleware here
+httpServer.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
 

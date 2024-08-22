@@ -1,5 +1,5 @@
 {
-  "name": "tsapi",
+  "name": "tssqlapi",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -30,6 +30,7 @@
     "passport-facebook": "^3.0.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
+    "socket.io": "^4.7.5",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
@@ -51,3 +52,4 @@
     "@types/swagger-ui-express": "^4.1.6"
   }
 }
+

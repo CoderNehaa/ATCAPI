@@ -1,3 +1,6 @@
+diff bw http server and express server
+
+
 Pending tasks -
 
 1. update comment api query logic
@@ -28,3 +31,4 @@ userExist function in the same file -
 2. If entry not found, it returns result false and message "User not found". 
 3. If entry found in db, it generates new accessToken and new refreshToken, puts both token in res.cookie and update req.cookie tokens.
 
+search articles api

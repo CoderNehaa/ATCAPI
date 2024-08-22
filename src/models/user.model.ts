@@ -75,13 +75,14 @@ export class UserModel {
   static async create(user: UserInterface): Promise<UserInterface> {
     const result:any = await pool.query(
       `INSERT INTO 
-      users (email, provider, socialId, username, profilePicture, isVerified, password) 
-      VALUE(?, ?, ?, ?, ?, ?, ?)`,
+      users (email, provider, socialId, username, bio, profilePicture, isVerified, password) 
+      VALUE(?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         user.email,
         user.provider,
         user.socialId,
         user.username,
+        user.bio,
         user.profilePicture,
         user.isVerified,
         user.password,
@@ -96,5 +97,11 @@ export class UserModel {
   static async delete(userId: number): Promise<void> {
     debugger;
     await pool.query(`DELETE FROM users where id = ${userId}`);
+  }
+
+  static async update(user:UserInterface){
+    const query = `
+      UPDATE users SET bio = ? , profilePicture = ?, username = ? WHERE id = ?`
+    const result = await pool.query(query, [user.bio, user.profilePicture, user.username, user.id])
   }
 }

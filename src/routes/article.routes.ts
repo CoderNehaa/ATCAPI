@@ -6,12 +6,10 @@ const articleRouter = express();
 const articleController = new ArticleController();
 
 articleRouter.get('/all', articleController.getAllArticles);
-articleRouter.get('/trending', articleController.getTrendingArticles);
+articleRouter.get('/trending/:userId', articleController.getTrendingArticles);
 
-articleRouter.get('/:articleId', articleController.getArticleByArticleId);
+articleRouter.get('/details/:articleId', articleController.getArticleByArticleId);
 articleRouter.get('/author/:userId', articleController.getArticlesByUserId);
-
-articleRouter.get('/language/:language', articleController.getArticleByLanguage);
 
 articleRouter.post('/add', authMiddleware, articleController.addNewArticle);
 articleRouter.put('/update/:articleId', authMiddleware, articleController.updateArticle);
@@ -23,6 +21,11 @@ articleRouter.post('/likes/:articleId/:userId', authMiddleware, articleControlle
 //keywords
 articleRouter.post('/add-keywords', authMiddleware, articleController.addKeywordsToArticle);
 articleRouter.get('/keyword/:keywordId', articleController.getArticlesByKeywords);
+
+//favorites
+articleRouter.get('/favorites', authMiddleware, articleController.getUserFavoriteArticles);
+articleRouter.post('/favorites/add/:articleId', authMiddleware, articleController.addToFavorites);
+articleRouter.delete('/favorites/remove/:articleId', authMiddleware, articleController.addToFavorites);
 
 
 export default articleRouter;

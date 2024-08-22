@@ -162,5 +162,6 @@ userRouter.get(
     });
   }
 );
+userRouter.get('/logout', userController.logOut);
 
 export default userRouter;

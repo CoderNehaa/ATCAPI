@@ -140,58 +140,5 @@ CREATE TABLE `article_likes` (
   CONSTRAINT `article_likes_ibfk_2` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) 
 
-  async verifyRefreshToken(req: Request, res: Response) {
-    const errResponse: ResponseInterface<Error> = {
-      result: false,
-      message: "",
-    };
-
-    const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) {
-      errResponse.message = "Refersh Token not provided";
-      return res.status(400).send(errResponse);
-    }
-
-    try {
-      const jwtSecret = config.JWT_SECRET;
-      if (!jwtSecret) {
-        throw new Error(
-          "JWT_SECRET is not defined in the environment variables."
-        );
-      }
-
-      const decoded = jwt.verify(refreshToken, jwtSecret) as {
-        userId: number;
-        email: string;
-      };
-      const userId = decoded.userId;
-      const email = decoded.email;
-
-      // Generate new tokens
-      const newAccessToken = generateToken(userId, email, "1h");
-      const newRefreshToken = generateToken(userId, email, "7d");
-
-      res.cookie("refreshToken", newRefreshToken, {
-        httpOnly: true,
-        secure: config.NODE_ENV === "production",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-
-    } catch (e) {
-      console.log(e);
-
-      if (e instanceof jwt.JsonWebTokenError) {
-        errResponse.message = "Invalid refersh token";
-        return res.status(403).send(errResponse);
-      } else if (e instanceof jwt.TokenExpiredError) {
-        errResponse.message = "Refresh token has expired";
-        return res.status(403).send(errResponse);
-      }
-
-      errResponse.message = "Internal server error";
-      return res.status(500).send(errResponse);
-    }
-  }
-
 
 

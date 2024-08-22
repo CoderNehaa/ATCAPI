@@ -54,6 +54,7 @@ class UserController {
         isVerified: false,
         socialId: "",
         profilePicture: "",
+        bio:"Hey there! I am ATCian"
       };
 
       const newUser: any = await UserModel.create(user);
@@ -132,9 +133,14 @@ class UserController {
 
   async updateUser(req: Request, res: Response) {
     try {
-      const updatedUser = req.body;
-      const { userId } = req.params;
+      const updatedUser:any = {
+        ...req.user,
+        bio:req.body.bio,
+        profilePicture:req.body.profilePicture,
+        username:req.body.username
+      }
 
+      await UserModel.update(updatedUser);
       const succResponse: ResponseInterface<void> = {
         result: true,
         message: "User updated successfully",
@@ -143,10 +149,10 @@ class UserController {
     } catch (e) {
       console.log("Error updatng user : ", e);
       const errResponse: ResponseInterface<Error> = {
-        result: true,
-        message: "Error occurred while updating user",
+        result: false,
+        message: "Failed to update! Try later",
       };
-      return res.status(500).send(errResponse);
+      return res.status(200).send(errResponse);
     }
   }
 
@@ -218,6 +224,43 @@ class UserController {
 
   async sendValidUser(req: Request, res: Response) {
     res.status(200).send({ result: true, user: req.user });
+  }
+
+  async logOut(req:Request, res:Response){
+    try{  
+      req.logout((err) => {
+        if (err) {
+          return res.status(500).send({ result: false, message: "Logout failed" });
+        }
+        // Clear the cookies by setting them with an expired date
+        res.cookie("accessToken", "", {
+          httpOnly: true,
+          secure: false,
+          expires: new Date(0),
+          maxAge:0,
+          sameSite: "none"
+        });
+    
+        res.cookie("refreshToken", "", {
+          httpOnly: true,
+          secure: false,
+          expires: new Date(0),
+          maxAge:0,
+          sameSite: "none"
+        });
+    
+        const resObj = {
+          result: false,    //for validate user api, if user is not deleted, logout will be called
+          message: "Logged out successfully"
+        };
+        return res.status(200).send(resObj);
+      });
+    } catch (e){
+      console.log(e);
+      return res.status(200).send({result:false, message:"Failed to log out! Please try again."})
+      
+    }
+
   }
 }
 
