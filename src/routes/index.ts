@@ -1,4 +1,4 @@
-import express, {Request, Response} from 'express';
+import express, { Request, Response } from 'express';
 import userRouter from './users.routes';
 import articleRouter from './article.routes';
 import commentRouter from './comment.route';
