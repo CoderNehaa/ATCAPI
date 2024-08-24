@@ -12,7 +12,7 @@ import {Server} from "socket.io";
 import http from "http"
 const PORT = 3200;
 
-const server = express();
+const server = express(); 
 
 const httpServer = http.createServer(server);
 //socket.io Server requires httpServer

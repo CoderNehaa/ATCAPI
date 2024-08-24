@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon index.ts",
     "prodstart": "nodemon index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "vercel-build":"echo hello"
   },
   "keywords": [],
   "author": "",
