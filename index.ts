@@ -13,6 +13,8 @@ import http from "http"
 const PORT = 3200;
 
 const server = express(); 
+server.use(express.static('public'));
+
 
 const httpServer = http.createServer(server);
 //socket.io Server requires httpServer
@@ -67,7 +69,13 @@ server.use(passport.initialize());
 server.use(passport.session());
 
 server.use('/', router);
-server.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
+
+server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc, {
+  swaggerOptions: {
+    url: 'https://petstore.swagger.io/v2/swagger.json', // point this to your swagger.json or use external swagger url
+    explorer: true
+  }
+}));
 
 
 // error handler middleware here
