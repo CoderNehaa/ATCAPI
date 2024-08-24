@@ -6,14 +6,14 @@ import { ResponseInterface } from "../interfaces/response.interface";
 export class ChatController {
   createChat = async (req: Request, res: Response) => {
     const { type, name, participants, dp } = req.body;
+    const user:any = req.user;
+    const currentUserId = user.id;
     try {
-      console.log(req.body);
-      
       const newChatId = await ChatModel.createChat(type, name, dp);
-      await ChatModel.addParticipants(newChatId, participants);
+      const newChat = await ChatModel.addParticipants(newChatId, participants, currentUserId);
       res
         .status(201)
-        .send({ result: true, message: "Chat created successfully" });
+        .send({ result: true, message: "Chat created successfully", data:newChat });
     } catch (error: any) {
       console.log(error);
       res

@@ -41,7 +41,7 @@ server.use(cors({
 
 //socket events
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  // console.log('New client connected');
 
   socket.on('sendMessage', (data) => {
     socket.to(data.chatId).emit('receiveMessage', data);

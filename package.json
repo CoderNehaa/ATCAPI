@@ -4,12 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev-start": "nodemon ./src/index.ts",
-    "dist-start": "nodemon ./dist/index",
-    "build": "tsc",
-    "lint": "eslint 'src/**/*.ts'",
-    "lint:fix": "eslint 'src/**/*.ts' --fix",
-    "vercel-build":"echo hello"
+    "start": "nodemon index.ts",
+    "prodstart": "nodemon index.ts",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",

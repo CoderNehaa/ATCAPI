@@ -89,7 +89,7 @@ userRouter.get(
 // Google authentication - handle callback
 userRouter.get(
   "/auth/google/callback",
-  passport.authenticate("google", { failureMessage: "Error occurred" }),
+  passport.authenticate("google", { failureRedirect: "/" }),
   (req: Request, res: Response, next: NextFunction) => {
     const user: any = req.user;
     req.logIn(user, (err) => {
@@ -116,7 +116,7 @@ userRouter.get(
       });
 
       //send accessToken in response
-      res.redirect(`${config.FRONT_END_DOMAIN}/auth/social-logins/callback`);
+      res.redirect(`${config.FRONT_END_DOMAIN}/`);
     });
   }
 );
@@ -158,10 +158,11 @@ userRouter.get(
       });
 
       //send accessToken in response
-      res.redirect(`${config.FRONT_END_DOMAIN}/auth/social-logins/callback`);
+      res.redirect(`${config.FRONT_END_DOMAIN}/`);
     });
   }
 );
+
 userRouter.get('/logout', userController.logOut);
 
 export default userRouter;

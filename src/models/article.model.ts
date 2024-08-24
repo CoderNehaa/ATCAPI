@@ -102,8 +102,6 @@ export class ArticleModel {
   }
 
   static async getTrending(userId:number) {
-    console.log(userId);
-    
     const query = `
       SELECT a.id, 
         a.title, 
@@ -128,8 +126,8 @@ export class ArticleModel {
     `;
 
     try {
-      const [rows] = await pool.query(query); // Execute the query
-      return rows; // Return the fetched articles
+      const [rows] = await pool.query(query); 
+      return rows; 
     } catch (error) {
       console.error("Error fetching trending articles:", error);
       throw error; // Rethrow the error for handling in the controller

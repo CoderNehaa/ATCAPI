@@ -16,12 +16,14 @@ export class ChatModel {
     return newChatId;
   }
 
-  static async addParticipants(chatId: number, participants: number[]) {
+  static async addParticipants(chatId: number, participants: number[], currentUserId:number) {
     const insertQuery = participants
       .map((userId) => `(${chatId}, ${userId})`)
       .join(", ");
     const sql = `INSERT INTO participants(chatId, userId) VALUES ${insertQuery} ON DUPLICATE KEY UPDATE userId = userId`;
     await pool.query(sql);
+    const newChat = await this.getChatById(chatId, currentUserId);
+    return newChat;
   }
 
   static async getChatsByUserId(userId: number) {
@@ -60,9 +62,48 @@ GROUP BY
     c.id;
 
         `;
-
     const [chats]: any = await pool.query(query);
     return chats;
+  }
+
+  static async getChatById(chatId:number, currentUserId:number){
+    const query = 
+    `SELECT
+        c.*,
+        (
+            SELECT
+                JSON_OBJECT(
+                    'userId', u.id,
+                    'username', u.username,
+                    'profilePicture', u.profilePicture
+                )
+            FROM
+                users u
+            WHERE
+                u.id = (
+                    SELECT
+                        p2.userId
+                    FROM
+                        participants p2
+                    WHERE
+                        p2.chatId = c.id
+                        AND p2.userId != ${currentUserId}
+                        AND c.type = 'individual'
+                    LIMIT 1
+                )
+        ) AS receiver
+    FROM
+        chats c
+    JOIN
+        participants p ON c.id = p.chatId
+    WHERE
+        p.userId = ${currentUserId}
+        AND c.id = ${chatId}
+    GROUP BY
+        c.id;`;
+    
+    const [chats]: any = await pool.query(query);
+    return chats[0];
   }
 
   static async addMessage(chatId: number, senderId: number, message: string) {
