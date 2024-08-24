@@ -17,7 +17,6 @@ const socket_io_1 = require("socket.io");
 const http_1 = __importDefault(require("http"));
 const PORT = 3200;
 const server = (0, express_1.default)();
-server.use(express_1.default.static('public'));
 const httpServer = http_1.default.createServer(server);
 //socket.io Server requires httpServer
 const io = new socket_io_1.Server(httpServer, {
@@ -59,12 +58,7 @@ server.use(passport_1.default.initialize());
 //Middleware that will restore login state from a session.
 server.use(passport_1.default.session());
 server.use('/', index_1.default);
-server.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_json_1.default, {
-    swaggerOptions: {
-        url: 'https://petstore.swagger.io/v2/swagger.json', // point this to your swagger.json or use external swagger url
-        explorer: true
-    }
-}));
+server.use('/api', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_json_1.default));
 // error handler middleware here
 httpServer.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);
