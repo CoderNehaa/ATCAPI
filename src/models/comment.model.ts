@@ -4,7 +4,7 @@ export interface CommentInterface {
   id?: number; //unique(primary key)
   userId: number; //required
   articleId: number; //required
-  text: string; //required
+  comment: string; //required
   commentDate?: Date; //handled in db, by default date.now()
 }
 
@@ -17,10 +17,12 @@ export class CommentModel {
   }
 
   static async create(comment: CommentInterface): Promise<void> {
-    await pool.query(
-      `INSERT INTO comments (userId, articleId, text, commentDate) VALUE(?, ?, ?, ?)`,
-      [comment.userId, comment.articleId, comment.text, comment.commentDate]
+    const result = await pool.query(
+      `INSERT INTO comments (userId, articleId, comment) VALUE(?, ?, ?)`,
+      [comment.userId, comment.articleId, comment.comment]
     );
+    console.log(result);
+    
   }
 
   static async update(updatedComment: CommentInterface): Promise<void> {

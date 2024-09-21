@@ -101,64 +101,61 @@ export class ArticleModel {
     }
   }
 
-  static async getTrending(userId:number) {
+  static async getTrending(userId:number) {    
     const query = `
-      SELECT a.id, 
-        a.title, 
-        a.description, 
-        a.articleImage, 
-        a.likes, 
-        a.articleDate, 
-        a.privacy, 
-        COUNT(ac.commentId) AS comments,
-        u.username, 
-        u.profilePicture,
-        CASE 
-            WHEN f.userId = ${userId} THEN TRUE
-            ELSE FALSE
-        END AS isFavorite
-      FROM articles a 
-      LEFT JOIN users u ON a.userId = u.id
-      LEFT JOIN favorites f ON f.articleId = a.id AND f.userId = ${userId}
-      LEFT JOIN article_comments ac ON ac.articleId = a.id
-      WHERE a.privacy = 'public'
-      GROUP BY a.id, a.title, a.description, a.articleImage, a.likes, a.articleDate, a.privacy, u.username, u.profilePicture, f.userId;
+    SELECT 
+      a.id, 
+      a.title, 
+      a.description, 
+      a.articleImage, 
+      a.articleDate, 
+      a.likes, 
+      COALESCE(c.comment_count, 0) AS comments,
+      u.id AS userId, 
+      u.username, 
+      u.profilePicture,
+      (SELECT CASE WHEN EXISTS (SELECT * FROM favorites WHERE userId = ${userId} AND articleId = a.id) THEN true ELSE false END) AS isFav
+    FROM 
+      articles a 
+    JOIN 
+      users u ON a.userId = u.id
+    LEFT JOIN (
+      SELECT 
+          articleId, 
+          COUNT(*) AS comment_count
+      FROM 
+          comments
+      GROUP BY 
+          articleId
+    ) c ON a.id = c.articleId
+    WHERE 
+        a.privacy = "public"
+    ORDER BY 
+    a.likes DESC;
     `;
-
     try {
       const [rows] = await pool.query(query); 
       return rows; 
     } catch (error) {
       console.error("Error fetching trending articles:", error);
-      throw error; // Rethrow the error for handling in the controller
+      throw error; 
     }
   }
 
   static async getByKeyword(keywordId: number, userId:number): Promise<any> {
     const sql = `
-      SELECT a.id, 
-        a.title, 
-        a.description, 
-        a.articleImage, 
-        a.likes, 
-        a.articleDate, 
-        a.privacy, 
-        COUNT(ac.commentId) AS comments,
-        u.id AS userId, 
-        u.username, 
-        u.profilePicture,
-        CASE 
-            WHEN f.userId = ${userId} THEN TRUE
-            ELSE FALSE
-        END AS isFavorite
-      FROM articles a 
-      JOIN users u ON a.userId = u.id
-      LEFT JOIN favorites f ON f.articleId = a.id AND f.userId = ${userId}
-      LEFT JOIN article_comments ac ON ac.articleId = a.id
-      JOIN article_keywords ak ON a.id = ak.articleId
-      WHERE a.privacy = 'public' 
-        AND ak.keywordId = ${keywordId}
-      GROUP BY a.id, a.title, a.description, a.articleImage, a.likes, a.articleDate, a.privacy, u.id, u.username, u.profilePicture, f.userId;
+      SELECT a.id, a.title, a.description, a.articleImage, a.articleDate, a.likes, count(c.comment) as comments , u.id as userId, u.username, u.profilePicture,
+      (SELECT CASE WHEN EXISTS (SELECT * FROM favorites WHERE userId = ${userId} AND articleId = a.id) THEN true ELSE false END) as isFav
+      FROM articles a JOIN users u
+      ON a.userId = u.id
+      LEFT JOIN comments c
+      ON a.id = c.articleId
+      JOIN article_keywords ak
+      ON a.id = ak.articleId
+      WHERE a.privacy="public"
+      AND ak.keywordId = ${keywordId}
+      GROUP BY a.id, a.title, a.description, a.articleImage, a.articleDate, a.likes, c.id, u.id, u.username, u.profilePicture
+      ORDER BY a.likes DESC;
       `;
     try {
       const [rows] = await pool.query(sql, [keywordId]);
@@ -169,41 +166,35 @@ export class ArticleModel {
     }
   }
 
-  static async getById(articleId: number): Promise<any> {
-    const articlesQuery = `
-    SELECT a.id,
-      a.title,
-      a.description,
-      a.content,
-      a.likes,
-      a.articleDate,
-      a.articleImage,
-      u.username,
-      u.profilePicture,
-      u.id as userId
-      FROM articles a 
-      JOIN users u ON a.userId = u.id
-      WHERE a.privacy="public" AND 
-      a.id = 1
+  static async getById(articleId: number, userId:number): Promise<any> {
+    const articlesQuery = 
+    `
+      SELECT a.*, u.username, u.profilePicture,
+      (SELECT CASE WHEN EXISTS (SELECT * FROM favorites WHERE userId = ${userId} AND articleId = a.id) THEN true ELSE false END) as isFav
+      FROM articles a JOIN users u
+      ON a.userId = u.id
+      WHERE a.id = ${articleId} AND a.privacy="public";
     `;
     const [articles]: any = await pool.query(articlesQuery, [articleId]);
-
     if (articles.length === 0) {
       return null;
     }
     const article = articles[0];
     const keywordsQuery = `
-    SELECT 
-      k.id,
-      k.keywordName
-    FROM article_keywords ak
-    JOIN keywords k ON ak.keywordId = k.id
-    WHERE ak.articleId = ?
-  `;
+      SELECT 
+        k.id,
+        k.keywordName
+      FROM article_keywords ak
+      JOIN keywords k ON ak.keywordId = k.id
+      WHERE ak.articleId = ?
+    `;
 
     const [keywords]: any = await pool.query(keywordsQuery, [article.id]);
     const [comments] = await pool.query(
-      `SELECT * FROM comments WHERE articleId = ?`,
+      `SELECT c.*, u.username, u.profilePicture 
+      FROM comments c JOIN users u 
+      ON c.userId = u.id 
+      WHERE articleId = ?`,
       [article.id]
     );
     article.comments = comments;
@@ -211,6 +202,30 @@ export class ArticleModel {
 
     return article;
   }
+
+  static async getByUser(userId:number): Promise<any> {
+    const sql = `
+      SELECT a.id, a.title, a.description, a.articleImage, a.articleDate, a.likes, count(c.comment) as comments , u.id as userId, u.username, u.profilePicture,
+      (SELECT CASE WHEN EXISTS (SELECT * FROM favorites WHERE userId = ${userId} AND articleId = a.id) THEN true ELSE false END) as isFav
+      FROM articles a JOIN users u
+      ON a.userId = u.id
+      LEFT JOIN comments c
+      ON a.id = c.articleId
+      JOIN article_keywords ak
+      ON a.id = ak.articleId
+      WHERE a.privacy="public"
+      AND a.userId = ${userId}
+      GROUP BY a.id, a.title, a.description, a.articleImage, a.articleDate, a.likes, c.id, u.id, u.username, u.profilePicture
+      ORDER BY a.likes DESC;
+      `;
+    try {
+      const [rows] = await pool.query(sql);
+      return rows;
+    } catch (error) {
+      console.error("Error fetching articles by keyword:", error);
+      throw error;
+    }
+  }  
 
   static async getFavorites(userId: number) {
     const query = `
@@ -227,7 +242,7 @@ export class ArticleModel {
         CASE 
             WHEN f.userId = ${userId} THEN TRUE
             ELSE FALSE
-        END AS isFavorite
+        END AS isFav
       FROM articles a 
       LEFT JOIN users u ON a.userId = u.id
       LEFT JOIN favorites f ON f.articleId = a.id AND f.userId = ${userId}

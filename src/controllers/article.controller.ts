@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { ArticleInterface, ArticleModel } from "../models/article.model";
 import { ResponseInterface } from "../interfaces/response.interface";
-import pool from "../config/db.connect";
 import { UserModel } from "../models/user.model";
 
 interface Article {
@@ -33,8 +32,8 @@ class ArticleController {
 
   async getTrendingArticles(req: Request, res: Response): Promise<Response> {
     try {      
-      const userId = parseInt(req.params.userId); 
-      const articles = await ArticleModel.getTrending(userId?userId:0);
+      const userId = parseInt(req.params.userId);
+      const articles = await ArticleModel.getTrending(userId);
       const responseObj: ResponseInterface<typeof articles> = {
         result: true,
         message: "Trending articles fetched successfully",
@@ -50,7 +49,7 @@ class ArticleController {
       return res.status(500).send(responseObj);
     }
   }
-
+ 
   async getArticlesByKeywords(req: Request, res: Response): Promise<Response> {
     try {
       const user:any = req.user;
@@ -98,13 +97,16 @@ class ArticleController {
   async getArticleByArticleId(req: Request, res: Response): Promise<Response> {
     try {
       const articleId = parseInt(req.params.articleId);
+      const userId = parseInt(req.params.userId);
+      
       if(isNaN(articleId)){
-        return res.status(400).send({
+        return res.status(200).send({
           result:false,
           message:"Invalid Article ID"
         })
       }
-      const article = await ArticleModel.getById(articleId);
+      const article = await ArticleModel.getById(articleId, userId);
+      
       if (article) {
         const responseObj: ResponseInterface<typeof article> = {
           result: true,
@@ -130,10 +132,8 @@ class ArticleController {
 
   async getArticlesByUserId(req: Request, res: Response): Promise<Response> {
     try {
-      const { userId } = req.params;
-      const [authorArticles] = await pool.query(
-        `SELECT * FROM articles where userId = ${userId}`
-      );
+      const userId = parseInt(req.params.userId);
+      const authorArticles = await ArticleModel.getByUser(userId);
       if (authorArticles) {
         const responseObj: ResponseInterface<typeof authorArticles> = {
           result: true,
@@ -317,8 +317,9 @@ class ArticleController {
   
   async toggleLikes(req: Request, res: Response): Promise<Response> {
     try {
+      const user:any = req.user;
+      const userId = user.id;
       const articleId = parseInt(req.params.articleId);
-      const userId = parseInt(req.params.userId);
       let responseObj: ResponseInterface<void> = {
         result: false,
         message: "",
@@ -328,7 +329,7 @@ class ArticleController {
       const userExist = await UserModel.getbyId(userId);
       if (!userExist.result) {
         responseObj.message = "User not found";
-        return res.status(404).send(responseObj);
+        return res.status(200).send(responseObj);
       }
 
       //check if article exists

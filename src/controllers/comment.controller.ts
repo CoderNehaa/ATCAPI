@@ -1,18 +1,16 @@
-import { Request, Response } from 'express';
-import mongoose from 'mongoose';
+import { NextFunction, Request, Response } from 'express';
 import { ResponseInterface } from '../interfaces/response.interface';
 import { CommentInterface, CommentModel } from '../models/comment.model';
 
 class CommentController {
-  async addComment(req:Request, res:Response) {
-    const {userId, articleId, text, commentDate} = req.body;
-    const newComment :CommentInterface = { userId, articleId, text, commentDate }
-
+  async addComment(req:Request, res:Response, next:NextFunction) {
+    const {userId, articleId, comment} = req.body;
+    const newComment :CommentInterface = { userId, articleId, comment }
     await CommentModel.create(newComment);
-
+    
     try {
       const succResponse : ResponseInterface<void> = {
-        result: false,
+        result: true,
         message: 'Comment added successfully',
       };
       return res.status(200).send(succResponse);
@@ -33,7 +31,7 @@ class CommentController {
       const {text} = req.body;
       
       const oldComment:CommentInterface = await CommentModel.getById(commentId);
-      oldComment.text = text;
+      oldComment.comment = text;
       await CommentModel.update(oldComment);
 
       const succResponse : ResponseInterface<void> = {
